@@ -8,46 +8,23 @@
  */
 
 // Actions
-add_action( 'admin_head', array( 'Image_Sizes_Panel_Admin', 'admin_enqueue_scripts' ) );
+add_action( 'admin_enqueue_scripts', array( 'Image_Sizes_Panel_Admin', 'admin_enqueue_scripts' ) );
 add_action( 'add_meta_boxes', array( 'Image_Sizes_Panel_Admin', 'add_image_sizes_meta_box' ) );
 
 class Image_Sizes_Panel_Admin {
 
 	/**
-	 * Admin Styles
+	 * Admin Enqueue Scripts & Styles
 	 */
 	public static function admin_enqueue_scripts() {
 
 		$screen = get_current_screen();
 
+		// Only load scripts & styles on media edit pages
 		if ( 'post' == $screen->base && 'attachment' == $screen->id ) {
 
-			?>
-
-			<style>
-
-			#image_sizes_panel table {
-				width: 100%;
-			}
-
-			#image_sizes_panel table th,
-			#image_sizes_panel table td {
-				font-weight: normal;
-				text-align: left;
-				vertical-align: top;
-			}
-
-			#image_sizes_panel table td {
-				text-align: right;
-			}
-
-			#image_sizes_panel table .undefined th {
-				text-decoration: line-through;
-			}
-
-			</style>
-
-			<?php
+			wp_enqueue_style( 'image-sizes-panel', IMAGE_SIZES_PANEL_URL . 'admin/css/admin.css' );
+			wp_enqueue_script( 'image-sizes-panel', IMAGE_SIZES_PANEL_URL . 'admin/js/admin.js', array( 'jquery' ) );
 
 		}
 
@@ -91,6 +68,12 @@ class Image_Sizes_Panel_Admin {
 		if ( count( $image_sizes ) > 0 ) {
 
 			echo '<table>';
+			echo '<tr>';
+			echo '<th class="info">Info</th>';
+			echo '<th class="size">Size</th>';
+			echo '<th class="dim">Dimensions</th>';
+			echo '</tr>';
+
 			foreach ( $image_sizes as $size ) {
 
 				$src = wp_get_attachment_image_src( $post->ID, $size );
@@ -116,9 +99,35 @@ class Image_Sizes_Panel_Admin {
 					$class = 'undefined';
 				}
 
-				echo '<tr class="' . $class . '"><th>' . sprintf( $format, $size ) . '</th><td>' . $width . ' &times ' . $height . '</td></tr>';
+				$message = '';
+
+				if ( ! in_array( $size, $generated_sizes ) ) {
+					$message .= 'Image file not generated. Will use next largest image size.';
+				}
+
+				if ( ! in_array( $size, $defined_sizes ) ) {
+					$message .= 'Image size no longer defined but file still exists. ';
+				}
+
+				if ( ! empty( $message ) ) {
+					$message = sprintf( '<div class="info-content">%s</class>', trim( $message ) );
+				}
+
+				echo '<tr id="image-sizes-panel-' . sanitize_html_class( $size ) . '" class="' . $class . '">';
+				echo '<td class="info"><a href="#image-sizes-panel-' . sanitize_html_class( $size ) . '" class="dashicons dashicons-info"></a></td>';
+				echo '<td class="size"><span class="name">' . sprintf( $format, $size ) . '</span>' . $message . '</td>';
+				echo '<td class="dim">' . $width . ' &times ' . $height . '</td>';
+				echo '</tr>';
 
 			}
+
+			$full = wp_get_attachment_image_src( $post->ID, 'full' );
+			echo '<tr id="image-sizes-panel-full" class="full">';
+			echo '<td class="info"><a href="#image-sizes-panel-full" class="dashicons dashicons-info"></a></td>';
+			echo '<td class="size"><span class="name"><a href="' . $full[0] . '" target="images_sizes_panel">full</a></span></td>';
+			echo '<td class="dim">' . $full[1] . ' &times ' . $full[2] . '</td>';
+			echo '</tr>';
+
 			echo '</table>';
 
 		} else {
