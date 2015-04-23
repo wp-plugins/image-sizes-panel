@@ -2,7 +2,7 @@
 Contributors: husobj
 Tags: attachments, media, images, sizes
 Requires at least: 3.9
-Tested up to: 4.1
+Tested up to: 4.2
 Stable tag: 0.2
 License: GPL2
 
